@@ -1,0 +1,565 @@
+---
+title: "README"
+output:
+  github_document:
+    pandoc_args: [ "--wrap=none" ]
+always_allow_html: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE)
+```
+
+# EDA with R - Capstone 3
+
+Lilly Zarmehrbakhsh and Abby Nam, DS201
+
+### Business Understanding
+
+Wine quality can be assessed by four factors: balance, length, intensity, and complexity (**BLIC**). These factors are applied after evaluating the wine's appearance, aroma, and structure, providing a more objective framework than the taster's individual preference (Brodie, 2026):
+
+- **Balance** is how well the core structure of the wine (e.g., acidity, alcohol, tannins, sweetness, and fruit) harmonize, such that no single component overwhelms the others.
+
+- **Length** is how long the flavor lasts after swallowing.
+
+- **Intensity** is how concentrated and pronounced the flavor is.
+
+- **Complexity** is how many distinct aromas and flavors there are, and how they layer and evolve in the glass.
+
+After assessing a wine on these four factors, a taster can reach a single, justified conclusion about its quality. According to the Wine and Spirit Education Trust (**WSET**) system, the quality of a wine ranges from *poor, acceptable, very good, to outstanding.*
+
+Good to very good wines show balance, decent length, appropriate intensity, and some complexity; outstanding wines excel on all four factors at the same time. On the other hand, poor to acceptable wines fall short on one or more factors, most often length, complexity, or balance (Wine with Seth, 2026).
+
+### Data Understanding
+
+The datasets were acquired from the UC Irvine Machine Learning Repository, uploaded in 2009: <https://archive.ics.uci.edu/dataset/186/wine+quality>
+
+The two datasets provided were related to red and white variants of Portuguese Vinho Verde wine samples. Many of the attributes include objective tests on the wine samples, such as pH values. The rating of quality is based on the median on at least 3 evaluations made by wine experts. Each expert graded the wine quality between 0 (very bad) and 10 (very excellent).
+
+#### Getting the Dataset
+
+```{r}
+# import packages
+library(tidyverse)
+library(ggplot2)
+
+# Import datasets
+red <- read.csv2("https://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-red.csv") # Use csv2 since columns separated by ; instead of ,
+head(red)
+
+white <- read.csv2("https://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-white.csv")
+head(white)
+```
+
+#### Overview of Dataset
+
+**Red Wine:** There are `r nrow(red)` rows and `r ncol(red)` columns in the red wine dataset.
+
+```{r}
+glimpse(red)
+```
+
+**White Wine:** There are `r nrow(white)` rows and `r ncol(white)` columns in the white wine dataset.
+
+```{r}
+glimpse(white)
+```
+
++----------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------+---------------+
+| **Attribute Name**   | **Description**                                                                                                                                            | **Data Type** |
++:=====================+:===========================================================================================================================================================+:=============:+
+| fixed acidity        | The amount of non-volatile acids fixed in the wine; Contribute to its tartness                                                                             | ratio         |
++----------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------+---------------+
+| volatile acidity     | The amount of acetic acid in the wine; High levels can lead to an unpleasant vinegar taste                                                                 | ratio         |
++----------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------+---------------+
+| citric acid          | The amount of citric acid; Adds freshness and flavor to wines                                                                                              | ratio         |
++----------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------+---------------+
+| residual sugar       | The amount of sugar remaining after fermentation stops; Measures sweetness                                                                                 | ratio         |
++----------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------+---------------+
+| chlorides            | The amount of salt/chlorides present in the wine                                                                                                           | ratio         |
++----------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------+---------------+
+| free sulfur dioxide  | The free form of sulfur dioxide ($SO_2$) that exists in equilibrium between molecular $SO_2$ and bisulfite ion, acting as an antimicrobial and antioxidant | ratio         |
++----------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------+---------------+
+| total sulfur dioxide | The sum of free and bound forms of sulfur dioxide in the wine                                                                                              | ratio         |
++----------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------+---------------+
+| density              | The mass per unit volume of the wine; Closely related to alcohol and sugar content                                                                         | ratio         |
++----------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------+---------------+
+| pH                   | A numeric scale describing how acidic or basic the wine is on a chemical scale                                                                             | interval      |
++----------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------+---------------+
+| sulphates            | A wine additive contributing to sulfur dioxide gas levels; acts as an antimicrobial and antioxidant                                                        | ratio         |
++----------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------+---------------+
+| alcohol              | The percent alcohol content by volume in the wine                                                                                                          | ratio         |
++----------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------+---------------+
+| quality              | The quality score assigned to the wine by experts, ranging from 0 (very bad) to 10 (very excellent)                                                        | ordinal       |
++----------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------+---------------+
+
+**References**
+
+Brodie, L. (2021, March 31). *The BLIC test: A simple way to tell how good your wine is*. Bacchus & Brodie. <https://www.bacchusandbrodie.com/blog/the-blic-test-a-simple-way-to-tell-how-good-your-wine-is>
+
+Cysewski, S. (2026). *BLIC*. Wine with Seth. <https://www.winewithseth.com/winewiki/blic/>
+
+P. Cortez, A. Cerdeira, F. Almeida, T. Matos and J. Reis. Modeling wine preferences by data mining from physicochemical properties. In Decision Support Systems, Elsevier, 47(4):547-553. ISSN: 0167-9236.
+
+### Data Preparation
+
+For ease of analysis, we merged the red and white wine datasets into one dataframe, adding a new column indicating whether the wine came from the red or white wine dataset.
+
+After combining the red and white wine datasets, the resulting dataset contained 6,497 wine samples and 13 columns. These included 11 physicochemical measurements, the wine-quality rating, and a derived categorical variable identifying wine type (red or white).
+
+```{r}
+# Identify wine types
+red$wine_type <- "Red"
+white$wine_type <- "White"
+
+# Combine datasets
+wine <- bind_rows(red, white)
+
+# Confirm properly merged
+head(wine)
+table(wine$wine_type)
+```
+
+There were no missing values in the dataset. Many of the ratio variables were saved as characters, so we transformed them to numbers:
+
+```{r}
+# check for NA values
+colSums(is.na(wine)) 
+
+# make numeric variables numeric in R
+wine <- wine %>%
+  mutate(across(-wine_type, as.numeric))
+
+# Make quality variable ordinal
+wine$quality_ord <- factor(wine$quality, ordered = TRUE)
+```
+
+Exact duplicate records were removed to prevent identical observations from being counted multiple times in the analysis. However, because the dataset does not provide unique sample identifiers, we do not know whether all identical records represent accidental duplication or simply distinct samples that have identical measured attributes. This data-cleaning decision could then affect the representativeness of the final dataset. Ultimately, we identified 1,177 duplicate wine samples and removed them, resulting in a final data set of 5,320 wine samples.
+
+```{r}
+library(dplyr)
+
+# 1. Count how many duplicate rows exist
+sum(duplicated(wine))
+
+# 2. View the actual duplicate rows alongside how many times they appear
+wine %>%
+  group_by(across(everything())) %>%
+  filter(n() > 1) %>%
+  summarise(count = n(), .groups = "drop") %>%
+  arrange(desc(count))
+
+# 3. Create a clean dataset with duplicates removed
+wine_clean <- wine %>% distinct()
+
+summary(wine_clean)
+```
+
+#### Visualizations
+
+We first looked at the general distribution patterns of each continuous numeric variable using histograms. Variables such as citric acid and pH, visually, appeared to be more normally distributed. Chlorides and residual sugar appeared to have a positively skewed distribution. In particular, the alcohol variable appears to have a large spread of data.
+
+```{r}
+wine_clean %>%
+  dplyr::select(where(is.numeric), -quality) %>%
+  pivot_longer(
+    everything(),
+    names_to = "Variable",
+    values_to = "Value"
+  ) %>%
+  ggplot(aes(x = Value)) +
+  geom_histogram(bins = 30, fill = "steelblue", color = "white") +
+  facet_wrap(~Variable, scales = "free", ncol = 3) +
+  labs(
+    title = "Distributions of Numeric Wine Variables",
+    x = "Value",
+    y = "Frequency"
+  ) +
+  theme_minimal()
+```
+
+Because wine quality was an ordinal variable with discrete categories, we created a bar chart to visualize the distribution. The majority of wines in this dataset received a quality rating between 5 and 7, with ratings of 5 and 6 alone comprising approximately 76.6% of observations. Relatively few wines received ratings at the extremes, with only 30 observations rated 3 and 5 observations rated 9.
+
+```{r}
+ggplot(wine_clean, aes(x = factor(quality))) +
+  geom_bar(fill = "steelblue") +
+  labs(
+    title = "Distribution of Wine Quality",
+    x = "Quality Rating",
+    y = "Frequency"
+  ) +
+  theme_minimal()
+```
+
+The majority of the wines in this dataset are white wines.
+
+```{r}
+wine_clean %>%
+  count(wine_type) %>%
+  ggplot(aes(x = "", y = n, fill = wine_type)) +
+  geom_col(width = 1) +
+  coord_polar("y") +
+  geom_text(
+    aes(label = paste0(round(n / sum(n) * 100, 1), "%")),
+    position = position_stack(vjust = 0.5)
+  ) +
+  labs(
+    title = "Distribution of Wine Types",
+    fill = "Wine Type"
+  ) +
+  theme_void()
+```
+
+To better understand the range and possible outliers in the dataset, we also created boxplots for the continuous numeric variables. These boxplots highlight that the spread of many variables is rather small, even if the distribution as seen in the histogram is somewhat normal (i.e. density). Chlorides, in particular, appears to have the most outliers, suggesting it is heavily positively-skewed.
+
+```{r}
+wine_clean %>%
+  dplyr::select(where(is.numeric), -quality) %>%
+  pivot_longer(everything(), names_to = "Variable", values_to = "Value") %>%
+  ggplot(aes(x = Variable, y = Value)) +
+  geom_boxplot(fill = "steelblue") +
+  facet_wrap(~Variable, scales = "free") +
+  labs(title = "Potential Outliers in Wine Variables",
+       x = "Variable", y = "Value") +
+  theme_minimal()
+```
+
+### Modeling and Evaluating
+
+Our research question was: do pH, sulphates, total sulfur dioxide and density predict wine quality?
+
+We hypothesized that pH, sulphates, total sulfur dioxide and density would all be significant predictors of wine quality. We expected that:
+
+- pH would be negatively associated with wine quality because a higher pH corresponds to lower acidity, which could make the wine taste flat or dull.
+
+- sulphates would be positively associated with wine quality because they prevent oxidation to preserve the wine's freshness and can help develop complexity during the aging process by slowing chemical reactions
+
+- total sulfur dioxide would be negatively associated with wine quality because high levels may indicate that the wine was already exposed to oxygen, which can degrade flavor
+
+- density would be negatively associated with wine quality because lower density wines tend to have higher alcohol content, which may add more complexity that earns higher quality ratings
+
+We used a hierarchical ordinal logistic regression to examine whether these four chemical properties that we believed aligned best with how the BLIC factors assessed wine quality, an ordinal outcome variable, above and beyond the type of wine (red vs. white), which was included as a control variable.
+
+```{r}
+#install.packages('brant')
+#install.packages('ordinal') # Install packages to run regression
+#install.packages("performance")
+library(car)       
+library(MASS)      
+library(brant)
+library(ordinal)
+library(performance)
+
+# Make wine_type a standard factor
+wine_clean$wine_type <- as.factor(wine_clean$wine_type)           # Converts into a standard factor
+wine_clean$quality_ord <- factor(wine_clean$quality,    
+                                levels = sort(unique(wine_clean$quality)), 
+                                ordered = TRUE)       # Orders outcome
+
+# Standardize density variable to be on a more logical scale
+wine_clean$density_scaled <- wine_clean$density * 1000
+
+# Verify ordering
+print(levels(wine_clean$quality_ord)) # Note: Data only has values 3-9 for quality
+
+# Creating the ordinal hierarchical regression model
+model_control <- clm(quality_ord ~ wine_type, 
+                   data = wine_clean, 
+                   link = "logit")
+
+model <- clm(quality_ord ~ wine_type + scale(pH) + scale(sulphates) + 
+                     scale(total.sulfur.dioxide) + scale(density), 
+                   data = wine_clean, 
+                   link = "logit")
+
+# View model summaries
+summary(model_control)
+
+summary(model)
+
+# Get pesudo-R² for both models (Nagelkerke's R²)
+r2(model_control)
+r2(model)
+
+# Test if second model significantly improved fit
+anova(model_control, model)
+```
+
+Nagelkerke’s R² indicates that the predictor model fits the data better than the control model (Control: R² = .015; Predictor: R² = .155). The likelihood-ratio test found that the predictor model significantly improved fit over the control model, χ²(4) = 747.54, p \< .001.
+
+```{r}
+# Exponentiating the log-odds and confidence intervals for readability
+or_model <- exp(coef(model))
+ci_model <- exp(confint(model))
+
+# Extracting predictor rows 
+predictors <- names(model$beta)
+or_table <- cbind(Odds_Ratio = or_model[predictors], ci_model[predictors, ])
+print(round(or_table, 4))
+```
+
+#### Interpreting the Outcome: Wine Quality (3–9)
+
++------------------------------------------------------+----------------+--------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| **Predictor**                                        | **Odds Ratio** | **95% CI**   | **Interpretation**                                                                                                                                                                   |
++:=====================================================+:==============:+:============:+:=====================================================================================================================================================================================+
+| White wine (`wine_typeWhite`)                        | 1.97           | [1.58, 2.47] | White wine was associated with 1.97 times the cumulative odds of receiving a higher quality rating compared with red wine, holding the other predictors constant.                    |
+|                                                      |                |              |                                                                                                                                                                                      |
+| \- Control variable                                  |                |              |                                                                                                                                                                                      |
++------------------------------------------------------+----------------+--------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| pH (`scale(pH)`)                                     | 1.11           | [1.05, 1.17] | Each +1 SD increase in pH was associated with approximately 11% higher cumulative odds of receiving a higher quality rating, holding the other predictors constant.                  |
++------------------------------------------------------+----------------+--------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Sulphates (`scale(sulphates)`)                       | 1.43           | [1.34, 1.52] | Each +1 SD increase in sulphates was associated with approximately 43% higher cumulative odds of receiving a higher quality rating, holding the other predictors constant.           |
++------------------------------------------------------+----------------+--------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Total Sulfur Dioxide (`scale(total.sulfur.dioxide)`) | 0.82           | [0.76, 0.89] | Each +1 SD increase in total sulfur dioxide was associated with approximately 18% lower cumulative odds of receiving a higher quality rating, holding the other predictors constant. |
++------------------------------------------------------+----------------+--------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Density (`scale(density)`)                           | 0.51           | [0.48, 0.55] | Each **+1 SD** increase in density was associated with approximately 49% lower cumulative odds of receiving a higher quality rating, holding the other predictors constant.          |
++------------------------------------------------------+----------------+--------------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+
+*Note:* The odds ratios represent changes in the cumulative odds of receiving a higher wine-quality rating. For example, a 1 SD increase in pH is associated with approximately 11% higher cumulative odds of receiving a rating above a given quality threshold, holding the other predictors constant. This does not mean that the probability of receiving a specific rating, such as a 7 instead of a 6, increases by 11%.
+
+These interpretations are based on the proportional-odds assumption, which assumes that predictor effects are consistent across quality thresholds. However, subsequent tests indicated that this assumption was not fully satisfied for several predictors. Therefore, the odds-ratio interpretations should be considered with this limitation in mind.
+
+#### Assumption Checks
+
+The model assumes that each wine observation represents an independent sample. Because the dataset does not identify a repeated-measures or clustering structure among the observations, independence was treated as a reasonable modeling assumption. However, this assumption cannot be directly verified from the available data.
+
+Multicollinearity was assessed using variance inflation factors (VIF). All predictors had VIF values below 5, indicating that multicollinearity was not a significant concern. Based on the nominal effects test, several predictors did not meet the assumption of proportional odds, indicating that the effect of wine type, sulphates, total sulfur dioxide and density is not consistent across the different thresholds of wine quality.
+
+```{r}
+#multicollinearity for multiple regression
+vif_model <- lm(quality ~ wine_type + pH + sulphates + total.sulfur.dioxide + density_scaled, data = wine_clean) 
+vif(vif_model)
+
+# proportional odds
+nominal_test(model)
+```
+
+The linearity-in-the-logit assumption did not hold for several of our predictors when adding quadratic terms individually to the original model. Holm correction was used for the likelihood-ratio tests to account for multiple hypothesis testing and control the family-wise error rate.
+
+ANOVA comparisons showed that adding quadratic terms for pH, sulphates, and density significantly improved model fit, even after applying a Holm correction for multiple comparisons. In contrast, adding a quadratic term for total sulfur dioxide did not significantly improve model fit. These findings suggest that the relationships between pH, sulphates, and density and wine quality may be nonlinear, supporting the inclusion of their quadratic terms in the final model.
+
+```{r}
+# linearity in the logit: Whether each continuous predictor has an approximately linear relationship with the cumulative log-odds of wine quality
+
+# pH 
+model_pH_quad <- clm(
+  quality_ord ~ wine_type + scale(pH) +
+    I(scale(pH)^2) +
+    scale(total.sulfur.dioxide) +
+    scale(sulphates) +
+    scale(density),
+  data = wine_clean,
+  link = "logit"
+)
+
+# sulphates 
+model_sulph_quad <- clm(
+  quality_ord ~ wine_type + scale(sulphates) +
+    I(scale(sulphates)^2) +
+    scale(pH) +
+    scale(total.sulfur.dioxide) +
+    scale(density),
+  data = wine_clean,
+  link = "logit"
+)
+
+# sulfur dioxide
+model_sulphdio_quad <- clm(
+  quality_ord ~ wine_type + scale(total.sulfur.dioxide) +
+    I(scale(total.sulfur.dioxide)^2) +
+    scale(pH) +
+    scale(sulphates) +
+    scale(density),
+  data = wine_clean,
+  link = "logit"
+)
+
+# density
+model_density_quad <- clm(
+  quality_ord ~ wine_type + scale(density) +
+    I(scale(density)^2) +
+    scale(pH) +
+    scale(sulphates) +
+    scale(total.sulfur.dioxide),
+  data = wine_clean,
+  link = "logit"
+)
+
+anova(model, model_pH_quad)
+anova(model, model_sulph_quad)
+anova(model, model_sulphdio_quad)
+anova(model, model_density_quad)
+
+# Extract p-values from the four model comparisons
+quadratic_p <- c(
+  pH = anova(model, model_pH_quad)[2, "Pr(>Chisq)"],
+  sulphates = anova(model, model_sulph_quad)[2, "Pr(>Chisq)"],
+  total_sulfur_dioxide = anova(model, model_sulphdio_quad)[2, "Pr(>Chisq)"],
+  density = anova(model, model_density_quad)[2, "Pr(>Chisq)"]
+)
+
+# Apply Holm correction
+quadratic_adjusted <- p.adjust(
+  quadratic_p,
+  method = "holm"
+)
+
+# Compare original and adjusted p-values
+data.frame(
+  Predictor = names(quadratic_p),
+  Original_p = quadratic_p,
+  Adjusted_p = quadratic_adjusted
+)
+```
+
+Wines rated quality 5 and 6 comprised approximately 76.6% of the data set, while quality 3 wines only had 30 observations, and quality 9 wines had only 5 observations. This could also pose an issue because compared to the "normal" quality wines, the model has relatively little information to estimate the lower and upper bounds for wine quality.
+
+```{r}
+quality_counts <- as.data.frame(table(wine_clean$quality_ord))
+colnames(quality_counts) <- c("Quality", "Frequency")
+
+quality_counts$Percentage <-
+  round(quality_counts$Frequency / sum(quality_counts$Frequency) * 100, 2)
+
+quality_counts
+```
+
+We tested the original model's convergence to assess the numerical stability of the ordinal logistic regression estimates. The model converged successfully (convergence = 0), and its maximum gradient was approximately 5.48 × 10⁻7, extremely close to 0, indicating that the model's optimization has stabilized.
+
+```{r}
+model$convergence
+model$maxGradient
+```
+
+#### Quadratic Ordinal Logistic Regression
+
+The quadratic model, which controlled for wine type, showed a significant improvement in fit compared to the original hierarchical ordinal logistic regression model (χ²(3) = 94.98, p \< .001). Nagelkerke's pseudo-R² increased from 0.155 to 0.172, suggesting an improvement in the model's explanatory power.
+
+Wine type, pH, sulphates, total sulfur dioxide, and density were all statistically significant predictors of wine quality, controlling for the other variables in the model. The quadratic terms for pH (β = −0.061, p \< .001), sulphates (β = −0.033, p = .001), and density (β = 0.130, p \< .001) were also statistically significant, suggesting nonlinear relationships between these predictors and wine quality. In contrast, the quadratic term for total sulfur dioxide was not retained because it did not significantly improve model fit after applying a Holm correction for multiple comparisons.
+
+Although the quadratic model improved overall model fit, the proportional-odds assumption was not fully satisfied. Tests of nominal effects indicated potential violations for wine type, pH, pH², sulphates, total sulfur dioxide, density, and density². The quadratic term for sulphates did not show a statistically significant violation. These results suggest that the effects of several predictors may vary across different thresholds of wine quality. A partial proportional-odds model could potentially address these violations by allowing selected predictor effects to vary across thresholds.
+
+```{r}
+# Standardize predictors
+wine_clean$pH_z <- as.numeric(scale(wine_clean$pH))
+wine_clean$sulphates_z <- as.numeric(scale(wine_clean$sulphates))
+wine_clean$tsd_z <- as.numeric(scale(wine_clean$total.sulfur.dioxide))
+wine_clean$density_z <- as.numeric(scale(wine_clean$density))
+
+# Fit final quadratic model
+model_quad <- clm(
+  quality_ord ~ wine_type +
+    pH_z + I(pH_z^2) +
+    sulphates_z + I(sulphates_z^2) +
+    tsd_z +
+    density_z + I(density_z^2),
+  data = wine_clean,
+  link = "logit"
+)
+
+summary(model_quad)
+
+# Compare against original linear model
+anova(model, model_quad)
+
+# Compare AIC and pseudo-R-squared
+AIC(model, model_quad)
+r2(model)
+r2(model_quad)
+
+# Check convergence
+model_quad$convergence
+model_quad$maxGradient
+
+# Check proportional odds
+nominal_test(model_quad)
+```
+
+These plots show predicted expected wine quality while holding the other standardized predictors at their means and wine type constant at Red. pH demonstrated a positive relationship with predicted quality that weakened at higher pH levels. Sulphates also demonstrated a positive relationship with predicted quality, although the association became less pronounced at higher concentrations. In contrast, density demonstrated a negative relationship with predicted quality, with the rate of decline becoming smaller at higher density levels. Finally, total sulfur dioxide demonstrated a negative linear relationship with predicted wine quality.
+
+```{r}
+# Visualize nonlinear relationships of standardized predictors with wine quality
+
+plot_quadratic <- function(predictor, label) {
+  
+  x_values <- seq(
+    quantile(wine_clean[[predictor]], 0.05, na.rm = TRUE),
+    quantile(wine_clean[[predictor]], 0.95, na.rm = TRUE),
+    length.out = 100
+  )
+  
+  newdata <- data.frame(
+    wine_type = factor(
+      levels(wine_clean$wine_type)[1],
+      levels = levels(wine_clean$wine_type)
+    ),
+    pH_z = 0,
+    sulphates_z = 0,
+    tsd_z = 0,
+    density_z = 0
+  )
+  
+  newdata <- newdata[rep(1, length(x_values)), ]
+  
+  newdata[[predictor]] <- x_values
+  
+  probabilities <- predict(
+    model_quad,
+    newdata = newdata,
+    type = "prob"
+  )
+  
+  if (is.list(probabilities)) {
+    probabilities <- probabilities$fit
+  }
+  
+  quality_values <- as.numeric(levels(wine_clean$quality_ord))
+  
+  expected_quality <- as.numeric(
+    probabilities %*% quality_values
+  )
+  
+  plot_data <- data.frame(
+    predictor = x_values,
+    quality = expected_quality
+  )
+  
+  ggplot(plot_data, aes(x = predictor, y = quality)) +
+    geom_line(linewidth = 1.1) +
+    labs(
+      title = paste("Effect of", label, "on Predicted Wine Quality"),
+      x = paste(label, "(standardized)"),
+      y = "Predicted Expected Quality Rating"
+    ) +
+    theme_minimal()
+}
+
+library(patchwork)
+
+p1 <- plot_quadratic("pH_z", "pH") +
+  labs(y = "Predicted Quality")
+
+p2 <- plot_quadratic("sulphates_z", "Sulphates") +
+  labs(y = "Predicted Quality")
+
+p3 <- plot_quadratic("density_z", "Density") +
+  labs(y = "Predicted Quality")
+
+(p1 / p2 / p3) &
+  theme(
+    plot.title = element_text(size = 13),
+    axis.title = element_text(size = 11),
+    axis.text = element_text(size = 9)
+  )
+```
+
+### Conclusions
+
+The hypothesis that pH would be negatively associated with wine quality was not supported. pH demonstrated a positive relationship with predicted wine quality, although this relationship weakened at higher pH levels, as indicated by the significant negative quadratic term. This suggests that the positive association between pH and wine quality becomes less pronounced as pH increases, indicating a potentially nonlinear relationship. As such, the relationship between acidity and wine quality may be more complex than originally anticipated. The hypotheses that sulphates would be positively associated, total sulfur dioxide would be negatively associated, and density would be negatively associated with wine quality were supported.
+
+Our analysis suggests that several physicochemical characteristics are associated with wine quality, even after controlling for wine type. In particular, pH and sulphates demonstrated positive relationships with wine quality that weakened at higher values, while density demonstrated a negative relationship with significant upward curvature. These findings suggest that the relationships between individual chemical properties and wine quality may be nonlinear. Wine producers may therefore benefit from monitoring multiple physicochemical characteristics during production and evaluating how they relate to quality assessments.
+
+Furthermore, considering multiple chemical characteristics together may be important when evaluating wine quality. However, these associations do not establish that directly manipulating any individual chemical property will independently improve wine quality, as other characteristics and interactions may also contribute to the final rating.
+
+Additionally, this dataset focused exclusively on red and white Vinho Verde wines, with quality scores ranging from 3 to 9. The distribution of quality ratings was also concentrated around scores of 5 and 6, with relatively few observations at the extremes. Other wine varieties and styles may demonstrate different relationships between the same physicochemical properties and wine quality. Therefore, these findings should not be overgeneralized to wines outside the scope of this dataset.
