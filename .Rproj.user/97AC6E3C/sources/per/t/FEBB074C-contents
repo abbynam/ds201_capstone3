@@ -1,0 +1,62 @@
+---
+title: "Capstone 3"
+author: "Abby Nam and Lilly Zarmehrbakhsh"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## EDA with R - Capstone 3
+
+Abby Nam and Lilly Zarmehrbakhsh
+
+#### Business Understanding
+
+Wine quality can be assessed by four factors: balance, length, intensity, and complexity (**BLIC**). These factors are applied after evaluating the wine's appearance, aroma, and structure, providing a more objective framework than the taster's individual preference (Brodie, 2026):
+
+- **Balance** is how well the core structure of the wine (e.g., acidity, alcohol, tannins, sweetness, and fruit) harmonize, such that no single component overwhelms the others.
+
+- **Length** is how long the flavor lasts after swallowing.
+
+- **Intensity** is how concentrated and pronounced the flavor is.
+
+- **Complexity** is how many distinct aromas and flavors there are, and how they layer and evolve in the glass.
+
+After assessing a wine on these four factors, a taster can reach a single, justified conclusion about its quality. According to the Wine and Spirit Education Trust (**WSET**) system, the quality of a wine ranges from *poor, acceptable, very good, to outstanding.*
+
+Good to very good wines show balance, decent length, appropriate intensity, and some complexity; outstanding wines excel on all four factors at the same time. On the other hand, poor to acceptable wines fall short on one or more factors, most often length, complexity, or balance (Wine with Seth, 2026).
+
+#### Data Understanding
+
+The two datasets provided were related to red and white variants of Portuguese Vinho Verde wine.
+
+#### Data Preparation
+
+See the names document for relevant features
+
+#### Modeling and Evaluating
+
+#### **References**
+
+P. Cortez, A. Cerdeira, F. Almeida, T. Matos and J. Reis. Modeling wine preferences by data mining from physicochemical properties. In Decision Support Systems, Elsevier, 47(4):547-553. ISSN: 0167-9236.
+
+[BLIC](https://www.winewithseth.com/winewiki/blic/){.uri}
+
+[The BLIC Test: A Simple Way To Tell How Good Your Wine Is](https://www.bacchusandbrodie.com/blog/the-blic-test-a-simple-way-to-tell-how-good-your-wine-is){.uri}
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
