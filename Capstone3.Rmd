@@ -65,33 +65,20 @@ glimpse(red)
 glimpse(white)
 ```
 
-+----------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------+---------------+
-| **Attribute Name**   | **Description**                                                                                                                                            | **Data Type** |
-+:=====================+:===========================================================================================================================================================+:=============:+
-| fixed acidity        | The amount of non-volatile acids fixed in the wine; Contribute to its tartness                                                                             | ratio         |
-+----------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------+---------------+
-| volatile acidity     | The amount of acetic acid in the wine; High levels can lead to an unpleasant vinegar taste                                                                 | ratio         |
-+----------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------+---------------+
-| citric acid          | The amount of citric acid; Adds freshness and flavor to wines                                                                                              | ratio         |
-+----------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------+---------------+
-| residual sugar       | The amount of sugar remaining after fermentation stops; Measures sweetness                                                                                 | ratio         |
-+----------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------+---------------+
-| chlorides            | The amount of salt/chlorides present in the wine                                                                                                           | ratio         |
-+----------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------+---------------+
-| free sulfur dioxide  | The free form of sulfur dioxide ($SO_2$) that exists in equilibrium between molecular $SO_2$ and bisulfite ion, acting as an antimicrobial and antioxidant | ratio         |
-+----------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------+---------------+
-| total sulfur dioxide | The sum of free and bound forms of sulfur dioxide in the wine                                                                                              | ratio         |
-+----------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------+---------------+
-| density              | The mass per unit volume of the wine; Closely related to alcohol and sugar content                                                                         | ratio         |
-+----------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------+---------------+
-| pH                   | A numeric scale describing how acidic or basic the wine is on a chemical scale                                                                             | interval      |
-+----------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------+---------------+
-| sulphates            | A wine additive contributing to sulfur dioxide gas levels; acts as an antimicrobial and antioxidant                                                        | ratio         |
-+----------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------+---------------+
-| alcohol              | The percent alcohol content by volume in the wine                                                                                                          | ratio         |
-+----------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------+---------------+
-| quality              | The quality score assigned to the wine by experts, ranging from 0 (very bad) to 10 (very excellent)                                                        | ordinal       |
-+----------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------+---------------+
+| **Attribute Name** | **Description** | **Data Type** |
+|:---|:---|:--:|
+| fixed acidity | The amount of non-volatile acids fixed in the wine; Contribute to its tartness | ratio |
+| volatile acidity | The amount of acetic acid in the wine; High levels can lead to an unpleasant vinegar taste | ratio |
+| citric acid | The amount of citric acid; Adds freshness and flavor to wines | ratio |
+| residual sugar | The amount of sugar remaining after fermentation stops; Measures sweetness | ratio |
+| chlorides | The amount of salt/chlorides present in the wine | ratio |
+| free sulfur dioxide | The free form of sulfur dioxide ($SO_2$) that exists in equilibrium between molecular $SO_2$ and bisulfite ion, acting as an antimicrobial and antioxidant | ratio |
+| total sulfur dioxide | The sum of free and bound forms of sulfur dioxide in the wine | ratio |
+| density | The mass per unit volume of the wine; Closely related to alcohol and sugar content | ratio |
+| pH | A numeric scale describing how acidic or basic the wine is on a chemical scale | interval |
+| sulphates | A wine additive contributing to sulfur dioxide gas levels; acts as an antimicrobial and antioxidant | ratio |
+| alcohol | The percent alcohol content by volume in the wine | ratio |
+| quality | The quality score assigned to the wine by experts, ranging from 0 (very bad) to 10 (very excellent) | ordinal |
 
 **References**
 

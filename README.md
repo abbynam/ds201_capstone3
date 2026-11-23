@@ -7,7 +7,7 @@ Lilly Zarmehrbakhsh and Abby Nam, DS201
 
 ### Business Understanding
 
-Wine quality can be assessed by four factors: balance, length, intensity, and complexity (**BLIC**). These factors are applied after evaluating the wine’s appearance, aroma, and structure, providing a more objective framework than the taster’s individual preference (Brodie, 2026):
+Wine quality can be assessed by four factors: balance, length, intensity, and complexity (**BLIC**). These factors are applied after evaluating the wine’s appearance, aroma, and structure, providing a more objective framework than the taster’s individual preference (Brodie, 2021):
 
 - **Balance** is how well the core structure of the wine (e.g., acidity, alcohol, tannins, sweetness, and fruit) harmonize, such that no single component overwhelms the others.
 
@@ -19,7 +19,7 @@ Wine quality can be assessed by four factors: balance, length, intensity, and co
 
 After assessing a wine on these four factors, a taster can reach a single, justified conclusion about its quality. According to the Wine and Spirit Education Trust (**WSET**) system, the quality of a wine ranges from *poor, acceptable, very good, to outstanding.*
 
-Good to very good wines show balance, decent length, appropriate intensity, and some complexity; outstanding wines excel on all four factors at the same time. On the other hand, poor to acceptable wines fall short on one or more factors, most often length, complexity, or balance (Wine with Seth, 2026).
+Good to very good wines show balance, decent length, appropriate intensity, and some complexity; outstanding wines excel on all four factors at the same time. On the other hand, poor to acceptable wines fall short on one or more factors, most often length, complexity, or balance (Cysewski, 2026).
 
 ### Data Understanding
 
@@ -146,14 +146,6 @@ glimpse(white)
 | sulphates | A wine additive contributing to sulfur dioxide gas levels; acts as an antimicrobial and antioxidant | ratio |
 | alcohol | The percent alcohol content by volume in the wine | ratio |
 | quality | The quality score assigned to the wine by experts, ranging from 0 (very bad) to 10 (very excellent) | ordinal |
-
-**References**
-
-Brodie, L. (2021, March 31). *The BLIC test: A simple way to tell how good your wine is*. Bacchus & Brodie. <https://www.bacchusandbrodie.com/blog/the-blic-test-a-simple-way-to-tell-how-good-your-wine-is>
-
-Cysewski, S. (2026). *BLIC*. Wine with Seth. <https://www.winewithseth.com/winewiki/blic/>
-
-P. Cortez, A. Cerdeira, F. Almeida, T. Matos and J. Reis. Modeling wine preferences by data mining from physicochemical properties. In Decision Support Systems, Elsevier, 47(4):547-553. ISSN: 0167-9236.
 
 ### Data Preparation
 
@@ -315,20 +307,39 @@ We first looked at the general distribution patterns of each continuous numeric 
 ``` r
 wine_clean %>%
   dplyr::select(where(is.numeric), -quality) %>%
-  pivot_longer(
-    everything(),
+  tidyr::pivot_longer(
+    cols = everything(),
     names_to = "Variable",
     values_to = "Value"
   ) %>%
-  ggplot(aes(x = Value)) +
-  geom_histogram(bins = 30, fill = "steelblue", color = "white") +
-  facet_wrap(~Variable, scales = "free", ncol = 3) +
-  labs(
-    title = "Distributions of Numeric Wine Variables",
-    x = "Value",
-    y = "Frequency"
+  dplyr::mutate(
+    Variable = dplyr::recode(
+      Variable,
+      "fixed.acidity" = "Fixed acidity (g/dm³)",
+      "volatile.acidity" = "Volatile acidity (g/dm³)",
+      "citric.acid" = "Citric acid (g/dm³)",
+      "residual.sugar" = "Residual sugar (g/dm³)",
+      "chlorides" = "Chlorides (g/dm³)",
+      "free.sulfur.dioxide" = "Free SO2 (mg/dm³)",
+      "total.sulfur.dioxide" = "Total SO2 (mg/dm³)",
+      "density" = "Density (g/cm³)",
+      "pH" = "pH",
+      "sulphates" = "Sulphates (g/dm³)",
+      "alcohol" = "Alcohol (% by volume)"
+    )
+  ) %>%
+  ggplot2::ggplot(
+    data = .,
+    mapping = ggplot2::aes(x = Value)
   ) +
-  theme_minimal()
+  ggplot2::geom_histogram(bins = 30, fill = "steelblue", color = "white") +
+  ggplot2::facet_wrap(~Variable, scales = "free", ncol = 3) +
+  ggplot2::labs(
+    title = "Distributions of Numeric Wine Variables",
+    x = "Measured value",
+    y = "Frequency (number of wines)"
+  ) +
+  ggplot2::theme_minimal()
 ```
 
 ![](Capstone3_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->
@@ -374,12 +385,37 @@ To better understand the range and possible outliers in the dataset, we also cre
 ``` r
 wine_clean %>%
   dplyr::select(where(is.numeric), -quality) %>%
-  pivot_longer(everything(), names_to = "Variable", values_to = "Value") %>%
-  ggplot(aes(x = Variable, y = Value)) +
+  tidyr::pivot_longer(
+    everything(),
+    names_to = "Variable",
+    values_to = "Value"
+  ) %>%
+  dplyr::mutate(
+    Variable = dplyr::recode(
+      Variable,
+      "fixed.acidity" = "Fixed acidity (g/dm³)",
+      "volatile.acidity" = "Volatile acidity (g/dm³)",
+      "citric.acid" = "Citric acid (g/dm³)",
+      "residual.sugar" = "Residual sugar (g/dm³)",
+      "chlorides" = "Chlorides (g/dm³)",
+      "free.sulfur.dioxide" = "Free SO2 (mg/dm³)",
+      "total.sulfur.dioxide" = "Total SO2 (mg/dm³)",
+      "density" = "Density (g/cm³)",
+      "pH" = "pH",
+      "sulphates" = "Sulphates (g/dm³)",
+      "alcohol" = "Alcohol (% by volume)"
+    )
+  ) %>%
+  ggplot2::ggplot(
+    aes(x = Variable, y = Value)
+  ) +
   geom_boxplot(fill = "steelblue") +
   facet_wrap(~Variable, scales = "free") +
-  labs(title = "Potential Outliers in Wine Variables",
-       x = "Variable", y = "Value") +
+  labs(
+    title = "Potential Outliers in Wine Variables",
+    x = NULL,
+    y = "Measured value (units shown in facet labels)"
+  ) +
   theme_minimal()
 ```
 
@@ -389,15 +425,15 @@ wine_clean %>%
 
 Our research question was: do pH, sulphates, total sulfur dioxide and density predict wine quality?
 
-We hypothesized that pH, sulphates, total sulfur dioxide and density would all be significant predictors of wine quality. We expected that:
+We hypothesized that pH, sulphates, total sulfur dioxide and density would all be associated with wine quality. We expected that:
 
-- pH would be negatively associated with wine quality because a higher pH corresponds to lower acidity, which could make the wine taste flat or dull.
+- *pH would be negatively associated with wine quality:* higher pH corresponds with lower acidity and can reduce wine stability and alter sensory characteristics, potentially reducing perceived freshness and balance (Forino et al., 2020), which may warrant lower quality ratings by experts.
 
-- sulphates would be positively associated with wine quality because they prevent oxidation to preserve the wine’s freshness and can help develop complexity during the aging process by slowing chemical reactions
+- *sulphates would be positively associated with wine quality*: previous research has identified sulphate concentration as a relevant physicochemical predictor of sensory wine quality in Portuguese Vinho Verde wines (Cortez et al., 2009). We expected sulphate concentration to be positively associated with experts’ quality ratings.
 
-- total sulfur dioxide would be negatively associated with wine quality because high levels may indicate that the wine was already exposed to oxygen, which can degrade flavor
+- *total sulfur dioxide would be negatively associated with wine quality*: Although sulfur dioxide protects wine against oxidation and microbial spoilage, higher concentrations can influence its sensory characteristics. SO₂ can interact with other wine compounds and influence the aromas perceived by tasters, potentially affecting the balance of desirable aromas and flavors (Coetzee et al., 2018). We therefore hypothesized that higher total sulfur dioxide concentrations would be negatively associated with wine.
 
-- density would be negatively associated with wine quality because lower density wines tend to have higher alcohol content, which may add more complexity that earns higher quality ratings
+- *density would be negatively associated with wine quality*: Alcohol contributes to wine’s body and mouthfeel and has been positively associated with expert quality ratings (Cortez et al., 2009). Because alcohol generally decreases wine density, we expected lower-density wines to be associated with higher quality ratings, although density also reflects other components of wine, including dissolved sugars.
 
 We used a hierarchical ordinal logistic regression to examine whether these four chemical properties that we believed aligned best with how the BLIC factors assessed wine quality, an ordinal outcome variable, above and beyond the type of wine (red vs. white), which was included as a control variable.
 
@@ -1053,12 +1089,502 @@ p3 <- plot_quadratic("density_z", "Density") +
 
 ![](Capstone3_files/figure-gfm/unnamed-chunk-18-1.png)<!-- -->
 
+### Partial proportional-odds models
+
+Nominal effects tests for the quadratic model indicated potential violations involving wine type, pH, sulphates, total sulfur dioxide, and density. To investigate these violations, we fitted a series of partial proportional odds models, allowing selected predictors to vary across the different wine quality thresholds.
+
+First, relaxing the proportional-odds assumption for total sulfur dioxide and density significantly improved model fit compared with the original quadratic model (LR = 105.64, *p* \< .001; AIC = 12,672.93 vs. 12,759). Allowing the quadratic density term to also vary across thresholds further improved fit (LR = 40.43, *p* \< .001; AIC = 12,642.50). Allowing the quadratic pH term to vary across thresholds resulted in an additional improvement (LR = 13.84, *p* = .017; AIC = 12,638.66).
+
+We also explored an additional model that allowed wine type to vary across thresholds. However, this model failed to converge and was therefore excluded from further consideration. The final nominal effects test indicated that wine type continued to violate the proportional odds assumption (LR = 28.84, *p* \< .001). No significant evidence of violations was found for linear pH (*p* = .317) or either the linear or quadratic sulphates terms (*p* = .174 and *p* = .087). Therefore, although the final partial proportional-odds model accommodated several departures from the proportional-odds assumption identified in the initial quadratic model, the remaining violation for wine type should be acknowledged when interpreting the results.
+
+``` r
+# Initial partial proportional-odds model
+model_ppo <- clm(
+  quality_ord ~ wine_type + pH_z + I(pH_z^2) +
+    sulphates_z + I(sulphates_z^2) +
+    tsd_z + density_z + I(density_z^2),
+  nominal = ~ tsd_z + density_z,
+  data = wine_clean,
+  link = "logit"
+)
+
+# Additional relaxation of quadratic density
+model_ppo_dens2 <- clm(
+  quality_ord ~ wine_type + pH_z + I(pH_z^2) +
+    sulphates_z + I(sulphates_z^2) +
+    tsd_z + density_z + I(density_z^2),
+  nominal = ~ tsd_z + density_z + I(density_z^2),
+  data = wine_clean,
+  link = "logit"
+)
+
+# Additional relaxation of quadratic pH
+model_ppo_ph <- clm(
+  quality_ord ~ wine_type + pH_z + I(pH_z^2) +
+    sulphates_z + I(sulphates_z^2) +
+    tsd_z + density_z + I(density_z^2),
+  nominal = ~ tsd_z + density_z + I(density_z^2) +
+    I(pH_z^2),
+  data = wine_clean,
+  link = "logit"
+)
+
+# Attempt to relax wine type (did not converge)
+model_ppo_wine <- clm(
+  quality_ord ~ wine_type + pH_z + I(pH_z^2) +
+    sulphates_z + I(sulphates_z^2) +
+    tsd_z + density_z + I(density_z^2),
+  nominal = ~ tsd_z + density_z + I(density_z^2) +
+    wine_type,
+  data = wine_clean,
+  link = "logit"
+)
+
+summary(model_ppo)
+```
+
+    ## formula: 
+    ## quality_ord ~ wine_type + pH_z + I(pH_z^2) + sulphates_z + I(sulphates_z^2) + tsd_z + density_z + I(density_z^2)
+    ## nominal: ~tsd_z + density_z
+    ## data:    wine_clean
+    ## 
+    ##  link  threshold nobs logLik   AIC      niter max.grad cond.H 
+    ##  logit flexible  5320 -6312.47 12672.93 8(0)  1.29e-10 1.5e+04
+    ## 
+    ## Coefficients: (2 not defined because of singularities)
+    ##                  Estimate Std. Error z value Pr(>|z|)    
+    ## wine_typeWhite    0.62098    0.11613   5.347 8.94e-08 ***
+    ## pH_z              0.12977    0.02937   4.419 9.93e-06 ***
+    ## I(pH_z^2)        -0.06042    0.01720  -3.514 0.000442 ***
+    ## sulphates_z       0.41130    0.03700  11.118  < 2e-16 ***
+    ## I(sulphates_z^2) -0.03245    0.01044  -3.109 0.001880 ** 
+    ## tsd_z                  NA         NA      NA       NA    
+    ## density_z              NA         NA      NA       NA    
+    ## I(density_z^2)    0.09044    0.02474   3.655 0.000257 ***
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 
+    ## Threshold coefficients:
+    ##                 Estimate Std. Error z value
+    ## 3|4.(Intercept) -4.87936    0.22149 -22.029
+    ## 4|5.(Intercept) -2.68304    0.10973 -24.452
+    ## 5|6.(Intercept) -0.14118    0.09263  -1.524
+    ## 6|7.(Intercept)  2.16992    0.09931  21.850
+    ## 7|8.(Intercept)  4.41442    0.14323  30.820
+    ## 8|9.(Intercept)  8.18514    0.78580  10.416
+    ## 3|4.tsd_z        0.11481    0.16444   0.698
+    ## 4|5.tsd_z       -0.08909    0.07330  -1.215
+    ## 5|6.tsd_z        0.17317    0.04455   3.887
+    ## 6|7.tsd_z        0.30442    0.05435   5.601
+    ## 7|8.tsd_z        0.10490    0.11538   0.909
+    ## 8|9.tsd_z       -0.01799    0.71587  -0.025
+    ## 3|4.density_z    0.46044    0.22541   2.043
+    ## 4|5.density_z    0.11708    0.07816   1.498
+    ## 5|6.density_z    0.70945    0.04023  17.636
+    ## 6|7.density_z    0.83139    0.04603  18.061
+    ## 7|8.density_z    0.87334    0.09578   9.119
+    ## 8|9.density_z    1.18096    0.61768   1.912
+
+``` r
+summary(model_ppo_dens2)
+```
+
+    ## formula: 
+    ## quality_ord ~ wine_type + pH_z + I(pH_z^2) + sulphates_z + I(sulphates_z^2) + tsd_z + density_z + I(density_z^2)
+    ## nominal: ~tsd_z + density_z + I(density_z^2)
+    ## data:    wine_clean
+    ## 
+    ##  link  threshold nobs logLik   AIC      niter max.grad cond.H 
+    ##  logit flexible  5320 -6292.25 12642.50 9(2)  1.88e-08 1.1e+04
+    ## 
+    ## Coefficients: (3 not defined because of singularities)
+    ##                  Estimate Std. Error z value Pr(>|z|)    
+    ## wine_typeWhite    0.58303    0.11607   5.023 5.08e-07 ***
+    ## pH_z              0.14195    0.02934   4.838 1.31e-06 ***
+    ## I(pH_z^2)        -0.06293    0.01718  -3.664 0.000249 ***
+    ## sulphates_z       0.40262    0.03706  10.865  < 2e-16 ***
+    ## I(sulphates_z^2) -0.03179    0.01044  -3.045 0.002329 ** 
+    ## tsd_z                  NA         NA      NA       NA    
+    ## density_z              NA         NA      NA       NA    
+    ## I(density_z^2)         NA         NA      NA       NA    
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 
+    ## Threshold coefficients:
+    ##                     Estimate Std. Error z value
+    ## 3|4.(Intercept)    -4.962377   0.258856 -19.170
+    ## 4|5.(Intercept)    -2.619577   0.118159 -22.170
+    ## 5|6.(Intercept)    -0.055408   0.092448  -0.599
+    ## 6|7.(Intercept)     2.115452   0.097863  21.616
+    ## 7|8.(Intercept)     4.291975   0.155290  27.638
+    ## 8|9.(Intercept)     8.276629   0.780504  10.604
+    ## 3|4.tsd_z           0.104150   0.166300   0.626
+    ## 4|5.tsd_z          -0.102107   0.073635  -1.387
+    ## 5|6.tsd_z           0.157206   0.044548   3.529
+    ## 6|7.tsd_z           0.298254   0.054148   5.508
+    ## 7|8.tsd_z           0.107326   0.116114   0.924
+    ## 8|9.tsd_z          -0.020480   0.695222  -0.029
+    ## 3|4.density_z       0.384154   0.230128   1.669
+    ## 4|5.density_z       0.187165   0.080333   2.330
+    ## 5|6.density_z       0.768606   0.042846  17.939
+    ## 6|7.density_z       0.868458   0.045797  18.963
+    ## 7|8.density_z       0.985524   0.124790   7.897
+    ## 8|9.density_z       0.981765   0.548108   1.791
+    ## 3|4.I(density_z^2) -0.014530   0.175614  -0.083
+    ## 4|5.I(density_z^2) -0.227333   0.064241  -3.539
+    ## 5|6.I(density_z^2) -0.245219   0.030942  -7.925
+    ## 6|7.I(density_z^2) -0.061995   0.009089  -6.821
+    ## 7|8.I(density_z^2)  0.032719   0.084132   0.389
+    ## 8|9.I(density_z^2) -0.273600   0.349930  -0.782
+
+``` r
+summary(model_ppo_ph)
+```
+
+    ## formula: 
+    ## quality_ord ~ wine_type + pH_z + I(pH_z^2) + sulphates_z + I(sulphates_z^2) + tsd_z + density_z + I(density_z^2)
+    ## nominal: ~tsd_z + density_z + I(density_z^2) + I(pH_z^2)
+    ## data:    wine_clean
+    ## 
+    ##  link  threshold nobs logLik   AIC      niter max.grad cond.H 
+    ##  logit flexible  5320 -6285.33 12638.66 10(2) 4.50e-10 1.4e+04
+    ## 
+    ## Coefficients: (4 not defined because of singularities)
+    ##                  Estimate Std. Error z value Pr(>|z|)    
+    ## wine_typeWhite    0.58463    0.11619   5.032 4.86e-07 ***
+    ## pH_z              0.14132    0.02919   4.842 1.29e-06 ***
+    ## I(pH_z^2)              NA         NA      NA       NA    
+    ## sulphates_z       0.40209    0.03700  10.868  < 2e-16 ***
+    ## I(sulphates_z^2) -0.03115    0.01019  -3.055  0.00225 ** 
+    ## tsd_z                  NA         NA      NA       NA    
+    ## density_z              NA         NA      NA       NA    
+    ## I(density_z^2)         NA         NA      NA       NA    
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+    ## 
+    ## Threshold coefficients:
+    ##                     Estimate Std. Error z value
+    ## 3|4.(Intercept)    -5.173252   0.284333 -18.194
+    ## 4|5.(Intercept)    -2.758794   0.126521 -21.805
+    ## 5|6.(Intercept)    -0.038665   0.092926  -0.416
+    ## 6|7.(Intercept)     2.120563   0.099527  21.306
+    ## 7|8.(Intercept)     4.307639   0.168045  25.634
+    ## 8|9.(Intercept)     7.975294   0.830841   9.599
+    ## 3|4.tsd_z           0.140155   0.165181   0.848
+    ## 4|5.tsd_z          -0.075326   0.073805  -1.021
+    ## 5|6.tsd_z           0.155321   0.044604   3.482
+    ## 6|7.tsd_z           0.298234   0.054184   5.504
+    ## 7|8.tsd_z           0.107897   0.116152   0.929
+    ## 8|9.tsd_z           0.018504   0.678391   0.027
+    ## 3|4.density_z       0.377331   0.232991   1.620
+    ## 4|5.density_z       0.189821   0.080486   2.358
+    ## 5|6.density_z       0.768443   0.042834  17.940
+    ## 6|7.density_z       0.868431   0.045798  18.962
+    ## 7|8.density_z       0.985734   0.124786   7.899
+    ## 8|9.density_z       1.038313   0.548252   1.894
+    ## 3|4.I(density_z^2)  0.000341   0.176770   0.002
+    ## 4|5.I(density_z^2) -0.211571   0.065636  -3.223
+    ## 5|6.I(density_z^2) -0.246265   0.030947  -7.958
+    ## 6|7.I(density_z^2) -0.061994   0.009090  -6.820
+    ## 7|8.I(density_z^2)  0.031551   0.084382   0.374
+    ## 8|9.I(density_z^2) -0.257204   0.345675  -0.744
+    ## 3|4.I(pH_z^2)       0.213135   0.070900   3.006
+    ## 4|5.I(pH_z^2)       0.168729   0.032577   5.179
+    ## 5|6.I(pH_z^2)       0.048694   0.019146   2.543
+    ## 6|7.I(pH_z^2)       0.059540   0.024000   2.481
+    ## 7|8.I(pH_z^2)       0.050301   0.057770   0.871
+    ## 8|9.I(pH_z^2)       0.554102   0.624031   0.888
+
+``` r
+summary(model_ppo_wine)
+```
+
+    ## formula: 
+    ## quality_ord ~ wine_type + pH_z + I(pH_z^2) + sulphates_z + I(sulphates_z^2) + tsd_z + density_z + I(density_z^2)
+    ## nominal: ~tsd_z + density_z + I(density_z^2) + wine_type
+    ## data:    wine_clean
+    ## 
+    ##  link  threshold nobs logLik   AIC      niter max.grad cond.H 
+    ##  logit flexible  5320 -6277.45 12622.90 23(2) 3.82e-09 1.3e+13
+    ## 
+    ## Coefficients: (4 not defined because of singularities)
+    ##                  Estimate Std. Error z value Pr(>|z|)
+    ## wine_typeWhite         NA         NA      NA       NA
+    ## pH_z              0.14082         NA      NA       NA
+    ## I(pH_z^2)        -0.06283         NA      NA       NA
+    ## sulphates_z       0.40399         NA      NA       NA
+    ## I(sulphates_z^2) -0.03157         NA      NA       NA
+    ## tsd_z                  NA         NA      NA       NA
+    ## density_z              NA         NA      NA       NA
+    ## I(density_z^2)         NA         NA      NA       NA
+    ## 
+    ## Threshold coefficients:
+    ##                     Estimate Std. Error z value
+    ## 3|4.(Intercept)     -4.61787         NA      NA
+    ## 4|5.(Intercept)     -3.36336         NA      NA
+    ## 5|6.(Intercept)      0.07547         NA      NA
+    ## 6|7.(Intercept)      1.99615         NA      NA
+    ## 7|8.(Intercept)      4.28781         NA      NA
+    ## 8|9.(Intercept)     27.79811         NA      NA
+    ## 3|4.tsd_z            0.24302         NA      NA
+    ## 4|5.tsd_z           -0.38853         NA      NA
+    ## 5|6.tsd_z            0.21307         NA      NA
+    ## 6|7.tsd_z            0.24556         NA      NA
+    ## 7|8.tsd_z            0.09591         NA      NA
+    ## 8|9.tsd_z            0.48685         NA      NA
+    ## 3|4.density_z        0.28486         NA      NA
+    ## 4|5.density_z        0.44955         NA      NA
+    ## 5|6.density_z        0.73096         NA      NA
+    ## 6|7.density_z        0.90029         NA      NA
+    ## 7|8.density_z        0.99059         NA      NA
+    ## 8|9.density_z        0.77855         NA      NA
+    ## 3|4.I(density_z^2)   0.01298         NA      NA
+    ## 4|5.I(density_z^2)  -0.24730         NA      NA
+    ## 5|6.I(density_z^2)  -0.24124         NA      NA
+    ## 6|7.I(density_z^2)  -0.06405         NA      NA
+    ## 7|8.I(density_z^2)   0.03162         NA      NA
+    ## 8|9.I(density_z^2)  -0.27396         NA      NA
+    ## 3|4.wine_typeWhite  -1.09642         NA      NA
+    ## 4|5.wine_typeWhite   0.37613         NA      NA
+    ## 5|6.wine_typeWhite  -0.76292         NA      NA
+    ## 6|7.wine_typeWhite  -0.41922         NA      NA
+    ## 7|8.wine_typeWhite  -0.57263         NA      NA
+    ## 8|9.wine_typeWhite -20.43814         NA      NA
+
+``` r
+model_ppo$convergence
+```
+
+    ## $code
+    ## [1] 0
+    ## 
+    ## $messages
+    ## [1] "successful convergence"
+    ## 
+    ## $alg.message
+    ## [1] "Absolute and relative convergence criteria were met"
+
+``` r
+model_ppo_dens2$convergence
+```
+
+    ## $code
+    ## [1] 0
+    ## 
+    ## $messages
+    ## [1] "successful convergence"
+    ## 
+    ## $alg.message
+    ## [1] "Absolute and relative convergence criteria were met"
+
+``` r
+model_ppo_ph$convergence
+```
+
+    ## $code
+    ## [1] 0
+    ## 
+    ## $messages
+    ## [1] "successful convergence"
+    ## 
+    ## $alg.message
+    ## [1] "Absolute and relative convergence criteria were met"
+
+``` r
+model_ppo_wine$convergence
+```
+
+    ## $code
+    ## [1] 1
+    ## 
+    ## $messages
+    ## [1] "Hessian is numerically singular: parameters are not uniquely determined"
+    ## 
+    ## $alg.message
+    ## [1] "Absolute convergence criterion was met, but relative criterion was not met"
+
+``` r
+AIC(model_ppo)
+```
+
+    ## [1] 12672.93
+
+``` r
+AIC(model_ppo_dens2)
+```
+
+    ## [1] 12642.5
+
+``` r
+AIC(model_ppo_ph)
+```
+
+    ## [1] 12638.66
+
+``` r
+anova(model_quad, model_ppo)
+```
+
+    ## Likelihood ratio tests of cumulative link models:
+    ##  
+    ##            formula:                                                                                                        
+    ## model_quad quality_ord ~ wine_type + pH_z + I(pH_z^2) + sulphates_z + I(sulphates_z^2) + tsd_z + density_z + I(density_z^2)
+    ## model_ppo  quality_ord ~ wine_type + pH_z + I(pH_z^2) + sulphates_z + I(sulphates_z^2) + tsd_z + density_z + I(density_z^2)
+    ##            nominal:           link: threshold:
+    ## model_quad ~1                 logit flexible  
+    ## model_ppo  ~tsd_z + density_z logit flexible  
+    ## 
+    ##            no.par   AIC  logLik LR.stat df Pr(>Chisq)    
+    ## model_quad     14 12759 -6365.3                          
+    ## model_ppo      24 12673 -6312.5  105.64 10  < 2.2e-16 ***
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+``` r
+anova(model_ppo, model_ppo_dens2)
+```
+
+    ## Likelihood ratio tests of cumulative link models:
+    ##  
+    ##                 formula:                                                                                                        
+    ## model_ppo       quality_ord ~ wine_type + pH_z + I(pH_z^2) + sulphates_z + I(sulphates_z^2) + tsd_z + density_z + I(density_z^2)
+    ## model_ppo_dens2 quality_ord ~ wine_type + pH_z + I(pH_z^2) + sulphates_z + I(sulphates_z^2) + tsd_z + density_z + I(density_z^2)
+    ##                 nominal:                            link: threshold:
+    ## model_ppo       ~tsd_z + density_z                  logit flexible  
+    ## model_ppo_dens2 ~tsd_z + density_z + I(density_z^2) logit flexible  
+    ## 
+    ##                 no.par   AIC  logLik LR.stat df Pr(>Chisq)    
+    ## model_ppo           24 12673 -6312.5                          
+    ## model_ppo_dens2     29 12643 -6292.3   40.43  5  1.223e-07 ***
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+``` r
+anova(model_ppo_dens2, model_ppo_ph)
+```
+
+    ## Likelihood ratio tests of cumulative link models:
+    ##  
+    ##                 formula:                                                                                                        
+    ## model_ppo_dens2 quality_ord ~ wine_type + pH_z + I(pH_z^2) + sulphates_z + I(sulphates_z^2) + tsd_z + density_z + I(density_z^2)
+    ## model_ppo_ph    quality_ord ~ wine_type + pH_z + I(pH_z^2) + sulphates_z + I(sulphates_z^2) + tsd_z + density_z + I(density_z^2)
+    ##                 nominal:                                        link:
+    ## model_ppo_dens2 ~tsd_z + density_z + I(density_z^2)             logit
+    ## model_ppo_ph    ~tsd_z + density_z + I(density_z^2) + I(pH_z^2) logit
+    ##                 threshold:
+    ## model_ppo_dens2 flexible  
+    ## model_ppo_ph    flexible  
+    ## 
+    ##                 no.par   AIC  logLik LR.stat df Pr(>Chisq)  
+    ## model_ppo_dens2     29 12643 -6292.3                        
+    ## model_ppo_ph        34 12639 -6285.3  13.843  5    0.01664 *
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+``` r
+nominal_test(model_ppo_ph)
+```
+
+    ## Tests of nominal effects
+    ## 
+    ## formula: quality_ord ~ wine_type + pH_z + I(pH_z^2) + sulphates_z + I(sulphates_z^2) + tsd_z + density_z + I(density_z^2)
+    ## nominal: ~tsd_z + density_z + I(density_z^2) + I(pH_z^2)
+    ##                  Df  logLik   AIC     LRT  Pr(>Chi)    
+    ## <none>              -6285.3 12639                      
+    ## wine_type         5 -6270.9 12620 28.8380 2.495e-05 ***
+    ## pH_z              5 -6282.4 12643  5.8876    0.3173    
+    ## sulphates_z       5 -6281.5 12641  7.6924    0.1740    
+    ## I(sulphates_z^2)  5 -6280.5 12639  9.6090    0.0871 .  
+    ## ---
+    ## Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+The partial proportional-odds analysis also affected the interpretation of several predictors. Although the original quadratic proportional-odds model suggested negative associations between wine quality and total sulfur dioxide and density, the final partial proportional-odds model produced predominantly positive threshold-specific estimates for total sulfur dioxide and positive linear estimates for density. Thus, these relationships were not consistent with the original model’s estimated directions. In contrast, the positive linear association between pH and wine quality and the positive linear and negative quadratic associations for sulphates were retained in the final model. These comparisons suggest that violations of the proportional-odds assumption were particularly relevant to interpreting the relationships involving total sulfur dioxide and density.
+
+``` r
+model_comparison <- data.frame(
+  Model = c(
+    "Initial quadratic PO",
+    "Partial PO 1",
+    "Partial PO 2",
+    "Partial PO 3 (final)",
+    "Partial PO 4"
+  ),
+  `Threshold-specific effects` = c(
+    "None",
+    "TSD + density",
+    "TSD + density + density²",
+    "TSD + density + density² + pH²",
+    "TSD + density + density² + pH² + wine type"
+  ),
+  AIC = c(
+    AIC(model_quad),
+    AIC(model_ppo),
+    AIC(model_ppo_dens2),
+    AIC(model_ppo_ph),
+    NA
+  ),
+  `Likelihood-ratio test` = c(
+    "—",
+    "LR = 105.64, p < .001",
+    "LR = 40.43, p < .001",
+    "LR = 13.84, p = .017",
+    "Not interpreted"
+  ),
+  Convergence = c(
+    model_quad$convergence$code,
+    model_ppo$convergence$code,
+    model_ppo_dens2$convergence$code,
+    model_ppo_ph$convergence$code,
+    model_ppo_wine$convergence$code
+  )
+)
+
+model_comparison$Convergence <- ifelse(
+  model_comparison$Convergence == 0,
+  "Yes",
+  "No"
+)
+
+knitr::kable(
+  model_comparison,
+  digits = 2,
+  caption = "Comparison of proportional-odds and partial proportional-odds models",
+  col.names = c(
+    "Model",
+    "Threshold-specific effects",
+    "AIC",
+    "Likelihood-ratio test",
+    "Converged?"
+  )
+)
+```
+
+| Model | Threshold-specific effects | AIC | Likelihood-ratio test | Converged? |
+|:---|:---|---:|:---|:---|
+| Initial quadratic PO | None | 12758.57 | — | Yes |
+| Partial PO 1 | TSD + density | 12672.93 | LR = 105.64, p \< .001 | Yes |
+| Partial PO 2 | TSD + density + density² | 12642.50 | LR = 40.43, p \< .001 | Yes |
+| Partial PO 3 (final) | TSD + density + density² + pH² | 12638.66 | LR = 13.84, p = .017 | Yes |
+| Partial PO 4 | TSD + density + density² + pH² + wine type | NA | Not interpreted | No |
+
+Comparison of proportional-odds and partial proportional-odds models
+
 ### Conclusions
 
-The hypothesis that pH would be negatively associated with wine quality was not supported. pH demonstrated a positive relationship with predicted wine quality, although this relationship weakened at higher pH levels, as indicated by the significant negative quadratic term. This suggests that the positive association between pH and wine quality becomes less pronounced as pH increases, indicating a potentially nonlinear relationship. As such, the relationship between acidity and wine quality may be more complex than originally anticipated. The hypotheses that sulphates would be positively associated, total sulfur dioxide would be negatively associated, and density would be negatively associated with wine quality were supported.
+The hypothesis that pH would be negatively associated with wine quality was not supported. The linear pH term demonstrated a positive association with wine quality. Although the initial quadratic proportional odds model suggested that this positive association weakened at higher pH levels, the partial proportional odds analysis indicated that the quadratic pH effect varied across quality thresholds. Similarly, the hypotheses that total sulfur dioxide and density would be negatively associated with wine quality were not consistently supported by the final model. Their estimated effects varied across quality thresholds, with positive linear estimates for density and predominantly positive estimates for total sulfur dioxide. In contrast, the hypothesis that sulphates would be positively associated with wine quality was supported. Sulphates demonstrated a positive linear association and a negative quadratic association, suggesting that the positive relationship became less pronounced at higher sulphate levels.
 
-Our analysis suggests that several physicochemical characteristics are associated with wine quality, even after controlling for wine type. In particular, pH and sulphates demonstrated positive relationships with wine quality that weakened at higher values, while density demonstrated a negative relationship with significant upward curvature. These findings suggest that the relationships between individual chemical properties and wine quality may be nonlinear. Wine producers may therefore benefit from monitoring multiple physicochemical characteristics during production and evaluating how they relate to quality assessments.
+Overall, our analysis suggests that several physicochemical characteristics are associated with wine quality, even after controlling for wine type. However, the relationships between these characteristics and wine quality were not necessarily consistent across quality thresholds. The final partial proportional odds model allowed the effects of the quadratic pH term, total sulfur dioxide, and both density terms to vary across quality thresholds, highlighting the complexity of the relationships between chemical properties and wine quality. These findings suggest that evaluating multiple physicochemical characteristics together may be important when assessing wine quality. Nevertheless, these associations do not establish that directly manipulating any individual chemical property will independently improve wine quality, as other characteristics and interactions may also contribute to the final rating.
 
-Furthermore, considering multiple chemical characteristics together may be important when evaluating wine quality. However, these associations do not establish that directly manipulating any individual chemical property will independently improve wine quality, as other characteristics and interactions may also contribute to the final rating.
+Additionally, this dataset focused exclusively on red and white Vinho Verde wines, with quality scores ranging from 3 to 9. The distribution of quality ratings was concentrated around scores of 5 and 6, with relatively few observations at the extremes. Other wine varieties and styles may demonstrate different relationships between the same physicochemical properties and wine quality. Therefore, these findings should not be overgeneralized to wines outside the scope of this dataset. Finally, the final partial proportional-odds model continued to show evidence of a proportional-odds violation for wine type, which should be considered when interpreting the results.
 
-Additionally, this dataset focused exclusively on red and white Vinho Verde wines, with quality scores ranging from 3 to 9. The distribution of quality ratings was also concentrated around scores of 5 and 6, with relatively few observations at the extremes. Other wine varieties and styles may demonstrate different relationships between the same physicochemical properties and wine quality. Therefore, these findings should not be overgeneralized to wines outside the scope of this dataset.
+### **References**
+
+Brodie, L. (2021, March 31). *The BLIC test: A simple way to tell how good your wine is*. Bacchus & Brodie. <https://www.bacchusandbrodie.com/blog/the-blic-test-a-simple-way-to-tell-how-good-your-wine-is>
+
+Coetzee, C., Buica, A., & du Toit, W. J. (2018). Research note: The use of SO2 to bind acetaldehyde in wine: Sensory implications. *South African Journal of Enology & Viticulture*, *32*(2). <https://doi.org/10.21548/39-2-3156>
+
+Cortez, P., Cerdeira, A., Almeida, F., Matos, T., & Reis, J. (2009). Modeling wine preferences by data mining from physicochemical properties. *Decision Support Systems*, *47*(4), 547–553. <https://doi.org/10.1016/j.dss.2009.05.016>
+
+Cysewski, S. (2026). *BLIC*. Wine with Seth. <https://www.winewithseth.com/winewiki/blic/>
+
+Forino, M., Picariello, L., Rinaldi, A., Moio, L., & Gambuti, A. (2020). How must pH affects the level of red wine phenols. *LWT*, *129*, Article 109546. <https://doi.org/10.1016/j.lwt.2020.109546>
